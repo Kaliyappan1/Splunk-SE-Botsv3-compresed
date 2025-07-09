@@ -25,11 +25,11 @@
     dest: /tmp/splunk-apps/unzipped
     remote_src: yes
 
-- name: Extract all .tgz and .tar.gz apps into Splunk apps directory
+- name: Extract each .tgz app into Splunk apps directory
   become_user: splunk
   shell: |
-    for app in /tmp/splunk-apps/unzipped/*.{tgz,tar.gz}; do
-      [ -e "$app" ] && tar -xvzf "$app" -C /opt/splunk/etc/apps/
+    for app in /tmp/splunk-apps/unzipped/*.tgz; do
+      tar -xvzf "$app" -C /opt/splunk/etc/apps/
     done
   args:
     executable: /bin/bash
