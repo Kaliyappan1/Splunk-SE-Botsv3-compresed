@@ -22,7 +22,7 @@
   become_user: root
   unarchive:
     src: /tmp/splunk-apps/apps.tar
-    dest: /tmp/splunk-apps/unzipped
+    dest: /tmp/splunk-apps/unzipped/Bots_V3_Splunkbase_apps-main
     remote_src: yes
 
 - name: Extract each .tar.gz app into Splunk apps directory
