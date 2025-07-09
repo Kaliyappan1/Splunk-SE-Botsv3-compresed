@@ -4,7 +4,7 @@
   vars_files:
     - group_vars/all.yml
   vars:
-    app_zip_url: "https://www.dropbox.com/scl/fi/yi82jkdxtjccss4kawa8p/Bots_V3_Splunkbase_apps-main.tar?rlkey=xnp2mxfdq2b0t7a3d83kcp63a&st=sy0hhyvm&dl=1"
+    app_zip_url: "https://www.dropbox.com/scl/fi/q4zv0pa5yxsr0ilaquyo6/Bots_V3_splunkapps.tar?rlkey=nhfa8xdv3ncdqo5bf0vuxt97o&st=9em9i451&dl=1"
 
   roles:
     - deploy_splunk_app
