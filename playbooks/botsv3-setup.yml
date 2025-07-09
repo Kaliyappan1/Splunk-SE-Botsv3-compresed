@@ -23,13 +23,19 @@
         name: splunk
         shell: /bin/bash
         createhome: yes
-    
-    - name: Ensure Splunk is running
-      become: yes
+
+    - name: Start Splunk in non-blocking mode
       become_user: splunk
-      shell: /opt/splunk/bin/splunk status || /opt/splunk/bin/splunk start
+      shell: /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
       args:
         executable: /bin/bash
+
+    - name: Wait for Splunk REST API to be up
+      wait_for:
+        port: 8089
+        host: 127.0.0.1
+        delay: 5
+        timeout: 180
 
     - name: Download and Add Tutorial Data to Splunk Monitoring
       become: yes
@@ -44,16 +50,8 @@
         fi
       args:
         executable: /bin/bash
-    
-    - name: Ensure Splunk is running
-      become: yes
-      become_user: splunk
-      shell: /opt/splunk/bin/splunk status || /opt/splunk/bin/splunk start
-      args:
-        executable: /bin/bash
 
     - name: Download and Install Splunk BOTS v3 Dataset
-      become: yes
       become_user: splunk
       shell: |
         cd /tmp
@@ -62,15 +60,7 @@
       args:
         executable: /bin/bash
 
-    - name: Ensure Splunk is running before restart
-      become: yes
-      become_user: splunk
-      shell: "/opt/splunk/bin/splunk status || /opt/splunk/bin/splunk start"
-      args:
-        executable: /bin/bash
-
     - name: Restart Splunk
-      become: yes
       become_user: root
       shell: "/opt/splunk/bin/splunk restart"
       args:
