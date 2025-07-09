@@ -52,6 +52,7 @@
         executable: /bin/bash
 
     - name: Download and Install Splunk BOTS v3 Dataset
+      become: yes
       become_user: splunk
       shell: |
         cd /tmp
@@ -59,6 +60,11 @@
         /opt/splunk/bin/splunk install app "/tmp/botsv3_data_set.tgz" -auth admin:{{ splunk_instance.splunk_admin_password }} --accept-license
       args:
         executable: /bin/bash
+      register: botsv3_result
+      failed_when: >
+        botsv3_result.rc != 0 and
+        "'Server Certificate Hostname Validation is disabled' not in botsv3_result.stderr"
+
 
     - name: Restart Splunk
       become_user: root
