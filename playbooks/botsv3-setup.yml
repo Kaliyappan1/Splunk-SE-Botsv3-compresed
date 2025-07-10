@@ -24,19 +24,32 @@
         shell: /bin/bash
         createhome: yes
 
-    - name: Start Splunk in non-blocking mode
+    - name: Check if Splunk is already running
+      become: true
+      become_user: splunk
+      shell: /opt/splunk/bin/splunk status
+      args:
+        executable: /bin/bash
+      register: splunk_status
+      ignore_errors: true
+
+    - name: Start Splunk only if not already running
+      become: true
       become_user: splunk
       shell: /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
       args:
         executable: /bin/bash
-      ignore_errors: true
+      when: splunk_status.rc != 0
 
-    - name: Wait for Splunk REST API to be up
+    - name: Wait for Splunk REST API (splunkd) to be available
+      become: true
       wait_for:
-        port: 8089
         host: 127.0.0.1
-        delay: 5
-        timeout: 180
+        port: 8089
+        delay: 5         # wait 5 seconds before first check
+        timeout: 180     # wait up to 3 minutes
+        state: started
+
 
     - name: Download and Add Tutorial Data to Splunk Monitoring
       become: yes
