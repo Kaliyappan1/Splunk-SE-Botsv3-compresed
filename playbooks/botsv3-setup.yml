@@ -24,14 +24,22 @@
         shell: /bin/bash
         createhome: yes
 
-    - name: Check if Splunk is already running
-      become: true
+    - name: Check if Splunk is already running (safe mode)
+      become: yes
       become_user: splunk
-      shell: /opt/splunk/bin/splunk status
+      shell: |
+        if /opt/splunk/bin/splunk status | grep -q 'is running'; then
+          echo "Splunk is running"
+          exit 0
+        else
+          echo "Splunk is not running"
+          exit 1
+        fi
       args:
         executable: /bin/bash
       register: splunk_status
-      ignore_errors: true
+      failed_when: false    # Do not treat non-zero exit as failure
+
 
     - name: Start Splunk only if not already running
       become: true
