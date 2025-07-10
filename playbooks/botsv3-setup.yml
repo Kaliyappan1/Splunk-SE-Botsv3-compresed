@@ -14,9 +14,6 @@
   vars:
     app_zip_url: "https://www.dropbox.com/scl/fi/q4zv0pa5yxsr0ilaquyo6/Bots_V3_splunkapps.tar?rlkey=nhfa8xdv3ncdqo5bf0vuxt97o&st=9em9i451&dl=1"
 
-  roles:
-    - deploy_splunk_app
-
   tasks:
     - name: Ensure Splunk User Exists
       user:
@@ -25,7 +22,6 @@
         createhome: yes
 
     - name: Check if Splunk is already running (safe mode)
-      become: yes
       become_user: splunk
       shell: |
         if /opt/splunk/bin/splunk status | grep -q 'is running'; then
@@ -38,26 +34,30 @@
       args:
         executable: /bin/bash
       register: splunk_status
-      failed_when: false    # Do not treat non-zero exit as failure
-
+      failed_when: false
 
     - name: Start Splunk only if not already running
-      become: true
       become_user: splunk
       shell: /opt/splunk/bin/splunk start -auth admin:{{ splunk_instance.splunk_admin_password }} --accept-license --answer-yes --no-prompt
       args:
         executable: /bin/bash
       when: splunk_status.rc != 0
 
+    - name: Wait for Splunk REST API (splunkd) to be available
+      wait_for:
+        host: 127.0.0.1
+        port: 8089
+        delay: 5
+        timeout: 180
+        state: started
 
     - name: Download and Add Tutorial Data to Splunk Monitoring
-      become: yes
       become_user: splunk
       shell: |
         cd /tmp
         curl -o tutorialdata.zip https://docs.splunk.com/images/Tutorial/tutorialdata.zip
-        if ! /opt/splunk/bin/splunk list monitor -auth admin:{{ splunk_instance.splunk_admin_password }} --accept-license | grep -q "/tmp/tutorialdata.zip"; then
-          /opt/splunk/bin/splunk add monitor /tmp/tutorialdata.zip -host_segment 3 -disabled 0 -auth admin:{{ splunk_instance.splunk_admin_password }} --accept-license
+        if ! /opt/splunk/bin/splunk list monitor -auth admin:{{ splunk_instance.splunk_admin_password }} | grep -q "/tmp/tutorialdata.zip"; then
+          /opt/splunk/bin/splunk add monitor /tmp/tutorialdata.zip -host_segment 3 -disabled 0 -auth admin:{{ splunk_instance.splunk_admin_password }}
         else
           echo "Tutorial data already added. Skipping."
         fi
@@ -65,7 +65,6 @@
         executable: /bin/bash
 
     - name: Download and Install Splunk BOTS v3 Dataset
-      become: yes
       become_user: splunk
       shell: |
         cd /tmp
@@ -76,11 +75,22 @@
       register: botsv3_result
       failed_when: >
         botsv3_result.rc != 0 and
-        "'Server Certificate Hostname Validation is disabled' not in botsv3_result.stderr"
+        "'App \\\"botsv3_data_set\\\" already exists' not in botsv3_result.stderr and
+        'Server Certificate Hostname Validation is disabled' not in botsv3_result.stderr"
 
-
-    - name: Restart Splunk
+    - name: Restart Splunk after installing tutorial and BOTS v3
       become_user: root
-      shell: "/opt/splunk/bin/splunk restart"
+      shell: /opt/splunk/bin/splunk restart
       args:
         executable: /bin/bash
+
+- name: Deploy Splunk Apps (last step)
+  hosts: splunk
+  become: yes
+  vars_files:
+    - group_vars/all.yml
+  vars:
+    app_zip_url: "https://www.dropbox.com/scl/fi/q4zv0pa5yxsr0ilaquyo6/Bots_V3_splunkapps.tar?rlkey=nhfa8xdv3ncdqo5bf0vuxt97o&st=9em9i451&dl=1"
+
+  roles:
+    - deploy_splunk_app
