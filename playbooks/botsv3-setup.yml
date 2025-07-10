@@ -36,7 +36,7 @@
     - name: Start Splunk only if not already running
       become: true
       become_user: splunk
-      shell: /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
+      shell: /opt/splunk/bin/splunk start -auth admin:{{ splunk_instance.splunk_admin_password }} --accept-license --answer-yes --no-prompt
       args:
         executable: /bin/bash
       when: splunk_status.rc != 0
