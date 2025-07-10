@@ -29,6 +29,7 @@
       shell: /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
       args:
         executable: /bin/bash
+      ignore_errors: true
 
     - name: Wait for Splunk REST API to be up
       wait_for:
