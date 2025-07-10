@@ -43,5 +43,3 @@
 - name: Restart Splunk
   become_user: root
   command: /opt/splunk/bin/splunk restart
-  async: 1
-  poll: 0
