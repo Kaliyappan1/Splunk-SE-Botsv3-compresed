@@ -41,15 +41,6 @@
         executable: /bin/bash
       when: splunk_status.rc != 0
 
-    - name: Wait for Splunk REST API (splunkd) to be available
-      become: true
-      wait_for:
-        host: 127.0.0.1
-        port: 8089
-        delay: 5         # wait 5 seconds before first check
-        timeout: 180     # wait up to 3 minutes
-        state: started
-
 
     - name: Download and Add Tutorial Data to Splunk Monitoring
       become: yes
