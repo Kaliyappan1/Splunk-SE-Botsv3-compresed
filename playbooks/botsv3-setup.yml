@@ -1,11 +1,3 @@
-- name: Pause localhost for 300 seconds
-  hosts: localhost
-  gather_facts: false
-  tasks:
-    - name: Wait for 300 seconds before continuing
-      pause:
-        seconds: 300
-
 - name: Setup Splunk Standalone Server
   hosts: splunk
   become: yes
