@@ -1,39 +1,13 @@
 version: 0.2
 
-cache:
-  paths:
-    - /root/terraform_cache/**/*
-    - /root/.ansible_cache/**/*
-
 phases:
-  install:
-    runtime-versions:
-      python: 3.8
-    commands:
-      - echo Installing Terraform and Ansible with cache...
-      - mkdir -p /root/terraform_cache /root/.ansible_cache
-      - if [ ! -f /root/terraform_cache/terraform ]; then
-          echo "Terraform not in cache. Downloading..." &&
-          wget https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip &&
-          unzip terraform_1.5.7_linux_amd64.zip -d /root/terraform_cache &&
-          chmod +x /root/terraform_cache/terraform;
-        else
-          echo "Terraform found in cache.";
-        fi
-      - export PATH=$PATH:/root/terraform_cache
-      - terraform --version
-      - if ! ansible --version > /dev/null 2>&1; then
-          echo "Installing Ansible..." &&
-          yum install -y unzip wget ansible;
-        else
-          echo "Ansible already installed.";
-        fi
-      - ansible --version
-
   pre_build:
     commands:
+      - echo "Environment ready!"
+      - terraform --version
+      - ansible --version
       - echo "Downloading dynamic tfvars from S3..."
-      - aws s3 cp s3://splunk-deployment-prod/$TFVARS_S3_KEY terraform.tfvars
+      - aws s3 cp s3://splunk-deployment-test/$TFVARS_S3_KEY terraform.tfvars
       - echo "Pre-build phase complete."
 
   build:
@@ -41,6 +15,8 @@ phases:
       - terraform init
       - chmod +x scripts/check_key.sh
       - terraform apply -auto-approve
+      - export INSTANCE_ID=$(terraform output -raw instance_id)
+      - echo $INSTANCE_ID > instance_id.txt
       - echo "Waiting for EC2 SSH to be ready..."
       - echo "Waiting for 300 seconds..." && sleep 250
       - echo "Running Ansible Playbook..."
@@ -49,3 +25,6 @@ phases:
   post_build:
     commands:
       - echo "EC2 Splunk + Ansible Deployment Completed Successfully!"
+      - chmod +x scripts/stop_instance.sh
+      - echo "Waiting for 250 seconds..." && sleep 250
+      - ./scripts/stop_instance.sh $(cat instance_id.txt)
